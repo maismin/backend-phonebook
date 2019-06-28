@@ -35,10 +35,6 @@ let persons = [
   }
 ]
 
-const getRandomInt = (max) => {
-  return Math.floor(Math.random() * Math.floor(max)) 
-}
-
 app.get('/api/persons', (request, response) => {
   Person.find({}).then(result => {
     const people = result.map(person => person.toJSON())
@@ -60,39 +56,24 @@ app.get('/api/persons/:id', (request, response) => {
 })
 
 app.post('/api/persons', (request, response) => {
-  const id = getRandomInt(10000)
   const body = request.body
 
-  const missingName = !body.name
-  const missingNumber = !body.number
-  const duplicatePerson = persons.some(person => person.name === body.name)
-
-  if (missingName) {
-    return response.status(400).json({
-      error: 'name is missing'
-    })
+  if (body.name === undefined) {
+    return response.status(400).json({ error: 'name missing' })
   }
 
-  if (missingNumber) {
-    return response.status(400).json({
-      error: 'number is missing'
-    })
+  if (body.number === undefined) {
+    return response.status(400).json({ error: 'number missing' })
   }
 
-  if (duplicatePerson) {
-    return response.status(400).json({
-      error: 'name must be unique'
-    })
-  }
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  })
 
-  const person = {
-    "name": body.name,
-    "number": body.number,
-    "id": id
-  }
-
-  persons = persons.concat(person)
-  response.json(person)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -100,7 +81,6 @@ app.delete('/api/persons/:id', (request, response) => {
   persons = persons.filter(person => person.id !== id)
   response.status(204).end()
 })
-
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
