@@ -1,8 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -38,23 +40,23 @@ const getRandomInt = (max) => {
 }
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Person.find({}).then(result => {
+    const people = result.map(person => person.toJSON())
+    response.json(people)
+  })
 })
 
 app.get('/info', (request, response) => {
-  response.send(`Phonebook has info for ${persons.length} people
-    <p>${new Date()}</p>`)
+  Person.find({}).then(result => {
+    response.send(`Phonebook has info for ${result.length} people<p>${new Date()}</p>`)
+  })
+  
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find(person => person.id === id)
-
-  if (person) {
-    response.json(person)
-  } else {
-    response.status(404).end()
-  }
+  Person.findById(request.params.id).then(person => {
+    response.json(person.toJSON())
+  })
 })
 
 app.post('/api/persons', (request, response) => {
@@ -106,7 +108,7 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on PORT ${PORT}`)
 })
