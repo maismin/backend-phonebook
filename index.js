@@ -13,7 +13,6 @@ app.use(bodyParser.json())
 morgan.token('data', (req, res) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
 
-
 app.get('/api/persons', (request, response) => {
   Person.find({}).then(result => {
     const people = result.map(person => person.toJSON())
@@ -22,12 +21,12 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-  Person.find({}).then(result => {
-    response.send(`Phonebook has info for ${result.length} people<p>${new Date()}</p>`)
+  Person.count().then(result => {
+    response.send(`Phonebook has info for ${result} people<p>${new Date()}</p>`)
   })
 })
 
-app.get('/api/persons/:id', (request, response) => {
+app.get('/api/persons/:id', (request, response, next) => {
   Person.findById(request.params.id)
     .then(person => {
       if (person) {
@@ -60,13 +59,27 @@ app.post('/api/persons', (request, response) => {
   })
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndRemove(request.params.id)
     .then(result => {
       response.status(204).end()
     })
     .catch(error => next(error))
 })
+
+ app.put('/api/persons/:id', (request, response, next) => {
+   const body = request.body
+ 
+   const person = {
+     number: body.number,
+   }
+ 
+   Person.findByIdAndUpdate(request.params.id, person, { new: true })
+     .then(updatedPerson => {
+       response.json(updatedPerson.toJSON())
+     })
+     .catch(error => next(error))
+ })
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
